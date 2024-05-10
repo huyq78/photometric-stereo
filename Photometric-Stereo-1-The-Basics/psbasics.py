@@ -19,6 +19,7 @@ import sys
 import numpy as np
 from scipy import misc
 from matplotlib import pyplot as plt
+from PIL import Image
 
 
 def sanitise_image(image):
@@ -37,7 +38,7 @@ def ps_basic_ols(images, L):
     original_size = images[0].shape[:2]
 
     # Normalise all images and convert to row vectors (each image is one row)
-    images = np.vstack(map(sanitise_image, images))
+    images = np.vstack(list(map(sanitise_image, images)))
 
     # Make sure that lighting vectors are normalised
     L = L / np.linalg.norm(L, ord=2, axis=1, keepdims=True)
@@ -80,9 +81,10 @@ if __name__ == "__main__":
 
     # Create a list from the input images
     images = []
-    for i in range(L.shape[1]):
-        # Important: Note that we flatten the images to greyscale here
-        images.append(misc.imread(sys.argv[i + 2], flatten=True))
+    for i in range(len(sys.argv) - 2):
+        img = Image.open(sys.argv[i + 2]).convert('L')  # Open image and convert to grayscale
+        img_array = np.array(img)  # Convert image to numpy array
+        images.append(img_array)
 
     # Run the PS algorithm
     N, rho = ps_basic_ols(images, L)
@@ -90,8 +92,8 @@ if __name__ == "__main__":
     # Values in N range from -1...1, we need them in 0...1, so we'll quickly remap it
     N_display = (N + 1) / 2
 
-    plt.subplot('121')
+    plt.subplot(1, 2, 1)
     plt.imshow(N_display)
-    plt.subplot('122')
+    plt.subplot(1, 2, 2)
     plt.imshow(255 * rho, cmap='gray')
     plt.show()
